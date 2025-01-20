@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Receipt</title>
+  </head>
+  <body>
+    <div id="image-container" style="padding: 10px"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+
+      socket.on("connect", () => {
+        console.log("Connected to server");
+      });
+
+      socket.on("newImage", (data) => {
+        displayImage(data.filename);
+      });
+
+      function displayImage(filename) {
+        const container = document.getElementById("image-container");
+        const img = document.createElement("img");
+        img.src = filename;
+        container.innerHTML = "";
+        container.append(img);
+
+        var audio = new Audio("receipt.m4a");
+        audio.play();
+      }
+    </script>
+  </body>
+</html>
