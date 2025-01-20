@@ -3,6 +3,19 @@
   <head>
     <meta charset="utf-8" />
     <title>Receipt</title>
+    <style>
+      #image-container {
+        display: inline-flex;
+        flex-direction: column;
+      }
+      #image-container .receipt {
+        border: 1px solid #ccc;
+
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+    </style>
   </head>
   <body>
     <div id="image-container" style="padding: 10px"></div>
@@ -21,10 +34,13 @@
 
       function displayImage(filename) {
         const container = document.getElementById("image-container");
+
+        const receiptDiv = document.createElement("div");
+        receiptDiv.className = "receipt";
         const img = document.createElement("img");
         img.src = filename;
-        container.innerHTML = "";
-        container.append(img);
+        receiptDiv.appendChild(img);
+        container.prepend(receiptDiv);
 
         var audio = new Audio("receipt.m4a");
         audio.play();
