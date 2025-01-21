@@ -21,14 +21,3 @@ A simple project to emulate a receipt printer by displaying the receipt on a web
    ```
 4. Open your web browser and navigate to:
    http://127.0.0.1:3000
-
-## Configuration
-
-In the printer settings, set the Epson printer’s IP address to `127.0.0.1:3000`
-
-If https is required:
-Open your navigator https://127.0.0.1:3300 and accept the self signed certificate
-
-Modify the printer ip to `127.0.0.1:3300`
-
-Or use ngrok...
