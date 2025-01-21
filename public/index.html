@@ -98,11 +98,9 @@
       function savePrinters(printers) {
         localStorage.setItem("printers", JSON.stringify(printers));
       }
-
-      // Function to render the list of printers
       function renderPrinters() {
         const printerList = document.getElementById("printer-list");
-        printerList.innerHTML = ""; // Clear existing list
+        printerList.innerHTML = "";
 
         const printers = getPrinters();
 

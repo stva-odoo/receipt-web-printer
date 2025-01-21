@@ -25,6 +25,8 @@ app.use(
 );
 app.set("view engine", "ejs");
 
+const serverIp = process.env.SERVER_IP || "127.0.0.1";
+
 app.post("/:name/cgi-bin/epos/service.cgi", async (req, res) => {
   const printerName = req.params.name;
   const filename = `r-${Date.now()}.jpg`;
@@ -42,7 +44,11 @@ app.post("/:name/cgi-bin/epos/service.cgi", async (req, res) => {
 app.get("/printer/:name", async (req, res) => {
   const printerName = slugify(req.params.name);
   //TODO url for http, and https server name
-  res.render("printer", { printerName: printerName });
+  res.render("printer", {
+    printerName: printerName,
+    http_ip: serverIp + ":3000/" + printerName,
+    https_ip: serverIp + ":3443/" + printerName,
+  });
 });
 
 // Middleware for authenticating sockets
