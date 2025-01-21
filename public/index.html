@@ -1,50 +1,172 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <title>Receipt</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>POS Printers</title>
     <style>
-      #image-container {
-        display: inline-flex;
-        flex-direction: column;
+      body {
+        background-color: #f4f6f8;
+        margin: 0;
+        padding: 20px;
       }
-      #image-container .receipt {
-        border: 1px solid #ccc;
-
-        padding: 15px;
+      a {
+        color: #017e84 !important;
+      }
+      .container {
+        max-width: 500px;
+        margin: auto;
+        background: #fff;
+        padding: 30px;
         border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        text-align: center;
+        color: #333;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
         margin-bottom: 20px;
+      }
+
+      input[type="text"] {
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 16px;
+      }
+
+      button {
+        padding: 10px;
+        background-color: #6b3e66;
+        border: none;
+        color: white;
+        font-size: 16px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .printer-list {
+        list-style-type: none;
+        padding: 0;
+      }
+
+      .printer-item {
+        background: #f9f9f9;
+        padding: 10px;
+        margin-bottom: 8px;
+
+        border-radius: 4px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .printer-item a {
+        text-decoration: none;
       }
     </style>
   </head>
   <body>
-    <div id="image-container" style="padding: 10px"></div>
+    <div class="container">
+      <h2>POS Printers</h2>
+      <form id="printer-form">
+        <input
+          type="text"
+          id="printer-name"
+          placeholder="Enter a printer name..."
+          required
+        />
+        <button type="submit">Create Printer</button>
+      </form>
+      <div id="prev-printers" style="display: none">
+        <h3 style="margin-top: 40px">Previous Printers</h3>
+        <ul id="printer-list" class="printer-list"></ul>
+      </div>
+    </div>
 
-    <script src="/socket.io/socket.io.js"></script>
     <script>
-      const socket = io();
-
-      socket.on("connect", () => {
-        console.log("Connected to server");
-      });
-
-      socket.on("newImage", (data) => {
-        displayImage(data.filename);
-      });
-
-      function displayImage(filename) {
-        const container = document.getElementById("image-container");
-
-        const receiptDiv = document.createElement("div");
-        receiptDiv.className = "receipt";
-        const img = document.createElement("img");
-        img.src = filename;
-        receiptDiv.appendChild(img);
-        container.prepend(receiptDiv);
-
-        var audio = new Audio("receipt.m4a");
-        audio.play();
+      function getPrinters() {
+        const printers = localStorage.getItem("printers");
+        return printers ? JSON.parse(printers) : [];
       }
+
+      function savePrinters(printers) {
+        localStorage.setItem("printers", JSON.stringify(printers));
+      }
+
+      // Function to render the list of printers
+      function renderPrinters() {
+        const printerList = document.getElementById("printer-list");
+        printerList.innerHTML = ""; // Clear existing list
+
+        const printers = getPrinters();
+
+        if (printers.length === 0) {
+          document.getElementById("prev-printers").style.display = "none";
+
+          return;
+        }
+
+        document.getElementById("prev-printers").style.display = "";
+        printers.forEach((printer, index) => {
+          const listItem = document.createElement("li");
+          listItem.className = "printer-item";
+
+          const urlLink = document.createElement("a");
+          urlLink.href = "/printer/" + printer.name;
+          urlLink.textContent = printer.name;
+          urlLink.target = "_blank";
+
+          listItem.appendChild(urlLink);
+          printerList.appendChild(listItem);
+        });
+      }
+
+      // Function to handle form submission
+      function handleFormSubmit(event) {
+        event.preventDefault();
+        const printerNameInput = document.getElementById("printer-name");
+        const printerName = printerNameInput.value.trim();
+
+        if (printerName === "") {
+          alert("Printer name cannot be empty.");
+          return;
+        }
+
+        const printers = getPrinters();
+
+        // Check for duplicate printer names
+        if (
+          printers.some(
+            (printer) =>
+              printer.name.toLowerCase() === printerName.toLowerCase()
+          )
+        ) {
+          alert("A printer with this name already exists.");
+          return;
+        }
+
+        const newPrinter = {
+          name: printerName,
+        };
+
+        printers.unshift(newPrinter);
+        savePrinters(printers);
+        renderPrinters();
+
+        printerNameInput.value = "";
+        window.location.href = "/printer/" + printerName;
+      }
+
+      document
+        .getElementById("printer-form")
+        .addEventListener("submit", handleFormSubmit);
+      document.addEventListener("DOMContentLoaded", renderPrinters);
     </script>
   </body>
 </html>

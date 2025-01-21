@@ -6,6 +6,7 @@ const path = require("path");
 const { convertRasterFile } = require("./lib/epson");
 const os = require("os");
 const fs = require("fs-extra");
+const slugify = require("slugify");
 
 const app = express();
 const server = http.createServer(app);
@@ -19,11 +20,13 @@ app.use("/receipt", express.static(receiptDir));
 app.use(
   express.raw({
     type: ["image/*", "text/plain"],
-    limit: "50mb",
+    limit: "2mb",
   })
 );
+app.set("view engine", "ejs");
 
-app.post("/cgi-bin/epos/service.cgi", async (req, res) => {
+app.post("/:name/cgi-bin/epos/service.cgi", async (req, res) => {
+  const printerName = req.params.name;
   const filename = `r-${Date.now()}.jpg`;
   const destFilePath = path.join(receiptDir, filename);
   try {
@@ -33,7 +36,20 @@ app.post("/cgi-bin/epos/service.cgi", async (req, res) => {
     console.error("Error converting data:", err);
     return res.sendStatus(500);
   }
-  io.emit("newImage", { filename: "receipt/" + filename });
+  io.to(printerName).emit("new-image", { filename: "/receipt/" + filename });
+});
+
+app.get("/printer/:name", async (req, res) => {
+  const printerName = slugify(req.params.name);
+  //TODO url for http, and https server name
+  res.render("printer", { printerName: printerName });
+});
+
+// Middleware for authenticating sockets
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+  socket.join(token);
+  next();
 });
 
 const PORT = process.env.PORT || 3000;
