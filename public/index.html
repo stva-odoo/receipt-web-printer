@@ -3,91 +3,142 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>POS Printers</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <title>POS Printer</title>
     <style>
-      body {
-        background-color: #f4f6f8;
-        margin: 0;
-        padding: 20px;
+      .fade-in {
+        animation: fadeIn 0.3s ease-in-out;
       }
-      a {
-        color: #017e84 !important;
-      }
-      .container {
-        max-width: 500px;
-        margin: auto;
-        background: #fff;
-        padding: 30px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
 
-      h1 {
-        text-align: center;
-        color: #333;
+      .fade-out {
+        animation: fadeOut 0.2s ease-in-out forwards;
       }
-
-      form {
-        display: flex;
-        flex-direction: column;
-        margin-bottom: 20px;
-      }
-
-      input[type="text"] {
-        padding: 10px;
-        margin-bottom: 10px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 16px;
-      }
-
-      button {
-        padding: 10px;
-        background-color: #6b3e66;
-        border: none;
-        color: white;
-        font-size: 16px;
-        border-radius: 4px;
-        cursor: pointer;
-      }
-
-      .printer-list {
-        list-style-type: none;
-        padding: 0;
-      }
-
-      .printer-item {
-        background: #f9f9f9;
-        padding: 10px;
-        margin-bottom: 8px;
-
-        border-radius: 4px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      .printer-item a {
-        text-decoration: none;
+      @keyframes fadeOut {
+        from {
+          opacity: 1;
+          transform: scale(1);
+        }
+        to {
+          opacity: 0;
+          transform: scale(0.95);
+        }
       }
     </style>
   </head>
-  <body>
-    <div class="container">
-      <h2>POS Printers</h2>
-      <form id="printer-form">
-        <input
-          type="text"
-          id="printer-name"
-          placeholder="Enter a printer name..."
-          required
-        />
-        <button type="submit">Create Printer</button>
-      </form>
-      <div id="prev-printers" style="display: none">
-        <h3 style="margin-top: 40px">Previous Printers</h3>
-        <ul id="printer-list" class="printer-list"></ul>
+  <body
+    class="min-h-screen flex items-center justify-center p-4 sm:p-6 font-sans bg-[linear-gradient(135deg,_#A18CD1_0%,_#FBC2EB_100%)]"
+  >
+    <div
+      class="w-full max-w-full sm:max-w-md md:max-w-lg lg:max-w-xl bg-white/85 rounded-2xl shadow-2xl overflow-hidden fade-in"
+    >
+      <!-- Header -->
+      <div
+        class="flex flex-col items-center justify-center text-center px-4 sm:px-6 pt-6 pb-0 space-y-3"
+      >
+        <svg
+          class="h-14 w-14"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 50 50"
+        >
+          <path
+            d="M9.5 8 6 36h6.019a6.5 6.5 0 0 0 12.962 0H25a6 6 0 0 0 12 0h.019a6.5 6.5 0 0 0 12.962 0H50v-1l-.045-.273a6.231 6.231 0 0 0-.058-.386l-.023-.118-.02-.1-3.797-22.78A4 4 0 0 0 42.112 8H9.5Z"
+            fill="#985184"
+          />
+          <path
+            d="m14 8-2 28a6 6 0 0 1-12 0v-1l3.494-23.586A4 4 0 0 1 7.451 8H14Zm21 0 2 28a6 6 0 0 1-12 0V8h10Z"
+            fill="#FBB945"
+          />
+          <path
+            d="M12 36a6 6 0 1 1-12 0h12Zm25 0a6 6 0 0 1-12 0h12Z"
+            fill="#F78613"
+          />
+          <path
+            d="M12.02 36a6.5 6.5 0 0 0 12.961 0H12.02Zm25 0a6.5 6.5 0 0 0 12.961 0H37.02Z"
+            fill="#712258"
+          />
+        </svg>
+
+        <h1
+          class="text-2xl sm:text-3xl md:text-3xl font-extrabold bg-gradient-to-r from-[#875A7B] to-[#6D549C] bg-clip-text text-transparent tracking-wide"
+        >
+          POS Printers
+        </h1>
+      </div>
+
+      <div class="p-4 sm:p-6">
+        <form
+          onsubmit="handleFormSubmit(event)"
+          class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-4 sm:space-y-0 sm:space-x-4"
+        >
+          <div class="flex-1">
+            <input
+              id="printer-name"
+              type="text"
+              placeholder="Enter a printer name"
+              class="w-full border border-gray-300 rounded-lg px-4 sm:px-6 py-2 sm:py-3 text-base sm:text-lg bg-white focus:border-[#875A7B] focus:outline-none transition"
+            />
+          </div>
+          <button
+            type="submit"
+            class="bg-[#875A7B] cursor-pointer text-white font-semibold text-base sm:text-lg px-6 sm:px-8 py-2 sm:py-3 rounded-lg transition transform hover:scale-105 hover:shadow-xl shrink-0"
+          >
+            Create
+          </button>
+        </form>
+        <p class="text-sm text-gray-600 mt-3">
+          This printer can act as an Epson ePOS device, a kitchen printer, or an
+          IoT thermal printer.
+        </p>
+
+        <ul
+          class="space-y-2 mt-6 pt-6 border-t border-gray-300"
+          style="display: none"
+          id="printer-list"
+        ></ul>
       </div>
     </div>
+
+    <template id="printer-template">
+      <li
+        class="group flex items-center justify-between bg-white rounded-xl px-4 sm:px-6 py-3 transition fade-in"
+      >
+        <a
+          href="#"
+          class="flex-1 text-gray-900 font-medium text-left text-base sm:text-lg transition group-hover:text-[#875A7B]"
+        >
+          Printer Name
+        </a>
+        <button
+          class="cursor-pointer group/delete flex-shrink-0 p-2 rounded-full hover:bg-red-100 transition"
+          aria-label="Remove Printer"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 text-gray-400 group-hover/delete:text-red-500 transition"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </li>
+    </template>
 
     <script>
       function getPrinters() {
@@ -98,34 +149,53 @@
       function savePrinters(printers) {
         localStorage.setItem("printers", JSON.stringify(printers));
       }
+
+      function removePrinter(index) {
+        const printers = getPrinters();
+        printers.splice(index, 1);
+        savePrinters(printers);
+        renderPrinters();
+      }
+
       function renderPrinters() {
         const printerList = document.getElementById("printer-list");
         printerList.innerHTML = "";
 
         const printers = getPrinters();
 
-        if (printers.length === 0) {
-          document.getElementById("prev-printers").style.display = "none";
-
+        if (printers.length == 0) {
+          printerList.style.display = "none";
           return;
         }
 
-        document.getElementById("prev-printers").style.display = "";
+        printerList.style.display = "";
+
+        const template = document.getElementById("printer-template");
+
         printers.forEach((printer, index) => {
-          const listItem = document.createElement("li");
-          listItem.className = "printer-item";
+          const clone = template.content.cloneNode(true);
+          const listItem = clone.querySelector("li");
+          const link = listItem.querySelector("a");
+          const deleteBtn = listItem.querySelector("button");
 
-          const urlLink = document.createElement("a");
-          urlLink.href = "/printer/" + printer.name;
-          urlLink.textContent = printer.name;
-          urlLink.target = "_blank";
+          link.href = "/printer/" + printer.name;
+          link.textContent = printer.name;
 
-          listItem.appendChild(urlLink);
-          printerList.appendChild(listItem);
+          deleteBtn.onclick = () => {
+            listItem.classList.add("fade-out");
+            listItem.addEventListener(
+              "animationend",
+              () => {
+                removePrinter(index);
+              },
+              { once: true }
+            );
+          };
+
+          printerList.appendChild(clone);
         });
       }
 
-      // Function to handle form submission
       function handleFormSubmit(event) {
         event.preventDefault();
         const printerNameInput = document.getElementById("printer-name");
@@ -138,21 +208,16 @@
 
         const printers = getPrinters();
 
-        // Check for duplicate printer names
         if (
           printers.some(
-            (printer) =>
-              printer.name.toLowerCase() === printerName.toLowerCase()
+            (p) => p.name.toLowerCase() === printerName.toLowerCase()
           )
         ) {
           alert("A printer with this name already exists.");
           return;
         }
 
-        const newPrinter = {
-          name: printerName,
-        };
-
+        const newPrinter = { name: printerName };
         printers.unshift(newPrinter);
         savePrinters(printers);
         renderPrinters();
@@ -161,9 +226,6 @@
         window.location.href = "/printer/" + printerName;
       }
 
-      document
-        .getElementById("printer-form")
-        .addEventListener("submit", handleFormSubmit);
       document.addEventListener("DOMContentLoaded", renderPrinters);
     </script>
   </body>

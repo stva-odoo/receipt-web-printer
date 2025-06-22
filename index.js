@@ -27,7 +27,7 @@ app.use(
 );
 app.set("view engine", "ejs");
 
-const serverIp = process.env.SERVER_IP || "127.0.0.1";
+const serverHostName = process.env.SERVER_HOST_NAME || "pos.stva.ovh";
 
 async function processReceipt(req, res) {
   const printerName = req.params.name;
@@ -44,12 +44,17 @@ async function processReceipt(req, res) {
 }
 
 app.get("/printer/:name", async (req, res) => {
-  const printerName = slugify(req.params.name);
+  const originalPrinterName = req.params.name;
+  const printerName = slugify(originalPrinterName, {
+    lower: true, // Required for iot module
+    remove: /[*+~.()'"!:@]/g,
+  });
   //TODO url for http, and https server name
   res.render("printer", {
+    originalPrinterName,
     printerName: printerName,
-    http_ip: serverIp + ":3000/" + printerName,
-    https_ip: serverIp + ":3443/" + printerName,
+    iotUrl: "/iot/" + printerName,
+    http_ip: serverHostName + "/" + printerName,
   });
 });
 
@@ -64,7 +69,7 @@ async function processIOReceipt(req, res) {
   }
 
   try {
-    const parsedData = JSON.parse(data);
+    const parsedData = typeof data === "string" ? JSON.parse(data) : data;
     //TODO check action
     if (!parsedData.receipt) {
       res.json({ result: true });
@@ -94,7 +99,11 @@ app.post(
 
 app.get("/iot/:name", async (req, res) => {
   const printerName = req.params.name;
-  await generateIOTModule(printerName + ".pos.stva.ovh", printerName, res);
+  await generateIOTModule(printerName + "." + serverHostName, printerName, res);
+});
+
+app.get("/hw_proxy/hello", async (req, res) => {
+  res.json({ result: true });
 });
 
 // Middleware for authenticating sockets
