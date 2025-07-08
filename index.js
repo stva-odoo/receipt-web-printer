@@ -3,8 +3,10 @@ const http = require("http");
 const { Server } = require("socket.io");
 var cors = require("cors");
 const path = require("path");
+const Database = require("better-sqlite3");
 const { convertRasterFile } = require("./lib/epson");
 const { generateIOTModule } = require("./lib/iot");
+const { randomUUID } = require("crypto");
 
 const os = require("os");
 const fs = require("fs-extra");
@@ -28,19 +30,27 @@ app.use(
 app.set("view engine", "ejs");
 
 const serverHostName = process.env.SERVER_HOST_NAME || "pos.stva.ovh";
+const db = new Database("configs.db");
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS configs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    config_key TEXT UNIQUE NOT NULL,
+    config_json TEXT NOT NULL
+  );
+`);
 
 async function processReceipt(req, res) {
   const printerName = req.params.name;
-  const filename = `r-${Date.now()}.jpg`;
+  const filename = `r-${randomUUID()}.jpg`;
   const destFilePath = path.join(receiptDir, filename);
   try {
     await convertRasterFile(req.body, destFilePath);
-    res.send("<response success='true'></response>");
+    sendImage(res, printerName, filename);
   } catch (err) {
     console.error("Error converting data:", err);
     return res.sendStatus(500);
   }
-  io.to(printerName).emit("new-image", { filename: "/receipt/" + filename });
 }
 
 app.get("/printer/:name", async (req, res) => {
@@ -80,15 +90,60 @@ async function processIOReceipt(req, res) {
       ""
     );
     const imageBuffer = Buffer.from(base64Image, "base64");
-    const filename = `iot-${Date.now()}.jpg`;
+    const filename = `iot-${randomUUID()}.jpg`;
     const destFilePath = path.join(receiptDir, filename);
     await fs.writeFile(destFilePath, imageBuffer);
-    res.json({ result: true });
+    res.json({ result: true }); //TODO config error code  ...
     io.to(printerName).emit("new-image", { filename: "/receipt/" + filename });
   } catch (err) {
     console.error("Error iot:", err);
     return res.sendStatus(500);
   }
+}
+
+function getPrinterConfig(printerName) {
+  let printerConfig = null;
+
+  const select = db.prepare(
+    "SELECT config_json FROM configs WHERE config_key = ?"
+  );
+
+  const row = select.get(printerName);
+  if (row) {
+    printerConfig = JSON.parse(row.config_json);
+  }
+  return printerConfig;
+}
+
+function sendImage(res, printerName, filename) {
+  const printerConfig = getPrinterConfig(printerName);
+
+  let attributes = "";
+
+  // See: https://download4.epson.biz/sec_pubs/pos/reference_en/epos_print/ref_epos_print_xml_en_xmlforcontrollingprinter_response.html
+  if (printerConfig && printerConfig.enabled) {
+    const success = printerConfig.success ? true : false;
+    attributes += `success='${success}'`;
+
+    if (printerConfig.code) {
+      attributes += ` code='${printerConfig.code}'`;
+    }
+    if (printerConfig.status) {
+      attributes += ` status='${printerConfig.status}'`;
+    }
+    if (printerConfig.battery) {
+      attributes += ` battery='${printerConfig.battery}'`;
+    }
+  } else {
+    attributes = `success='true'`;
+  }
+
+  res.send(`<response ${attributes}></response>`);
+
+  io.to(printerName).emit("new-image", {
+    filename: `/receipt/${filename}`,
+    config: printerConfig,
+  });
 }
 
 app.post(
@@ -104,6 +159,28 @@ app.get("/iot/:name", async (req, res) => {
 
 app.get("/hw_proxy/hello", async (req, res) => {
   res.json({ result: true });
+});
+
+app.post("/config/:name", express.json({}), async (req, res) => {
+  const printerName = req.params.name;
+  const data = req.body;
+
+  if (!data) {
+    const del = db.prepare("DELETE FROM configs WHERE config_key = ?");
+    del.run(printerName);
+  } else {
+    const insert = db.prepare(
+      "INSERT OR REPLACE INTO configs (config_key, config_json) VALUES (?, ?)"
+    );
+    insert.run(printerName, JSON.stringify(data));
+  }
+  return res.json({ config: data });
+});
+
+app.get("/config/:name", async (req, res) => {
+  const printerName = req.params.name;
+  const config = getPrinterConfig(printerName);
+  return res.json({ config });
 });
 
 // Middleware for authenticating sockets

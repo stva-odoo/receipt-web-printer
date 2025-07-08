@@ -125,6 +125,46 @@
         </div>
       </div>
 
+      <div class="mt-3">
+   <div class="mb-4 flex items-center space-x-2">
+    <input type="checkbox" id="custom-enabled" name="custom-enabled" class="w-4 h-4 text-[#714B67] border-gray-300 rounded" />
+    <label for="custom-enabled" class="ml-2 text-sm text-gray-700">Custom Response</label>
+  </div>
+  
+  <form id="printer-config-form" class="space-y-4 hidden">  <!-- hidden by default -->
+   
+    <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1" for="success">Success</label>
+    <select id="success" name="success" class="w-full border border-gray-300 rounded-md p-2 bg-white">
+      <option value="true">True</option>
+      <option value="false">False</option>
+    </select>
+  </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1" for="code">Code</label>
+      <input type="text" id="code" name="code" class="w-full border border-gray-300 rounded-md p-2 bg-white" />
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1" for="status">Status</label>
+      <input type="text" id="status" name="status" class="w-full border border-gray-300 rounded-md p-2 bg-white" />
+      <!-- 251854870: "EPTR_PAPER_NEAR_END",
+    252444700: "EPTR_REC_EMPTY",
+    252641308: "EPTR_REC_EMPTY", -->
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1" for="battery">Battery</label>
+      <input type="text" id="battery" name="battery" class="w-full border border-gray-300 rounded-md p-2 bg-white" />
+    </div>
+    <button
+      type="submit"
+      class="inline-flex items-center justify-center border-2 border-[#714B67] text-[#714B67] px-4 py-2 rounded-lg hover:bg-[#714B67] hover:text-white transition"
+    >
+      Save Configuration
+    </button>
+  </form>
+</div>
+
+
       <hr class="border-gray-300 mt-4 mb-4" />
       <div class="mb-4 pt-2">
         <a href="<%= iotUrl %>"
@@ -231,6 +271,93 @@
         const audio = new Audio("/receipt.m4a");
         audio.play();
       }
+
+      document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("printer-config-form");
+  const message = document.getElementById("config-message");
+  const customEnabled = document.getElementById("custom-enabled");
+
+  function updateFormVisibility() {
+    if (customEnabled.checked) {
+      form.classList.remove("hidden");
+    } else {
+      form.classList.add("hidden");
+    }
+  }
+
+  let latestConfig =  null;
+
+  fetch(`/config/<%= printerName %>`) //TODO Replace with EJS template call to avoid this request 
+    .then((res) => res.json())
+    .then((data) => {
+      if (data?.config) {
+       
+        data = data.config
+        latestConfig = data
+
+      
+        customEnabled.checked = data.enabled ?? false;
+        updateFormVisibility();
+
+        document.getElementById("success").value = String(data.success?? true);
+        document.getElementById("code").value = data.code || "";
+        document.getElementById("status").value = data.status || "";
+        document.getElementById("battery").value = data.battery || "";
+      }
+    })
+    .catch((err) => console.error("Failed to load config:", err));
+
+  customEnabled.addEventListener("change", () => {
+ updateFormVisibility();
+
+
+if(latestConfig){
+  latestConfig.enabled  = customEnabled.checked;
+
+      fetch(`/config/<%= printerName %>`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(latestConfig),
+    }) .catch((err) => {
+        console.error("Error saving config:", err);
+
+      });
+
+}
+
+  });
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+  
+    const config = {
+      enabled:  customEnabled.checked,
+      success:  form.success.value.toLowerCase()==="true",
+      code: form.code.value,
+      status: form.status.value,
+      battery: form.battery.value,
+    };
+
+      console.log("--->"+form.success.value,config)
+
+    fetch(`/config/<%= printerName %>`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(config),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Save failed");
+        return res.json();
+      })
+      .then(() => {
+       latestConfig = config
+      })
+      .catch((err) => {
+        console.error("Error saving config:", err);
+   
+      });
+  });
+});
   
     </script>
   </body>

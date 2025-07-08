@@ -16,6 +16,7 @@
   "license": "MIT",
   "dependencies": {
     "archiver": "^7.0.1",
+    "better-sqlite3": "^12.2.0",
     "canvas": "^3.0.1",
     "cors": "^2.8.5",
     "ejs": "^3.1.10",
