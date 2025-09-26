@@ -78,6 +78,8 @@
           opacity: 0;
         }
       }
+
+     code.hljs{display:block;overflow-x:auto;padding:1em}code.hljs{padding:3px 5px}.hljs{color:#abb2bf;background:#282c34}.hljs-comment,.hljs-quote{color:#5c6370;font-style:italic}.hljs-doctag,.hljs-formula,.hljs-keyword{color:#c678dd}.hljs-deletion,.hljs-name,.hljs-section,.hljs-selector-tag,.hljs-subst{color:#e06c75}.hljs-literal{color:#56b6c2}.hljs-addition,.hljs-attribute,.hljs-meta .hljs-string,.hljs-regexp,.hljs-string{color:#98c379}.hljs-attr,.hljs-number,.hljs-selector-attr,.hljs-selector-class,.hljs-selector-pseudo,.hljs-template-variable,.hljs-type,.hljs-variable{color:#d19a66}.hljs-bullet,.hljs-link,.hljs-meta,.hljs-selector-id,.hljs-symbol,.hljs-title{color:#61aeee}.hljs-built_in,.hljs-class .hljs-title,.hljs-title.class_{color:#e6c07b}.hljs-emphasis{font-style:italic}.hljs-strong{font-weight:700}.hljs-link{text-decoration:underline}
     </style>
   </head>
   <body
@@ -214,23 +216,43 @@
         displayImage(data.filename);
       });
 
-      function displayImage(filename) {
+      function insertDataContainer(cb){
         document.getElementById("loader").style.display = "none";
-        const container = document.getElementById("image-container");
-
+        const container =  document.getElementById("image-container");
         const receiptDiv = document.createElement("div");
         receiptDiv.className = "w-full max-w-3xl bg-white/90  rounded-xl shadow-lg p-6 mb-6 text-center";
-
-        const img = document.createElement("img");
-        img.style.display = "inline-block";
-        img.src = filename;
-
-        receiptDiv.appendChild(img);
+        cb(receiptDiv)
         container.prepend(receiptDiv);
+      }
 
+      function displayImage(filename) {
+    
+        insertDataContainer((receiptDiv)=>{
+          const img = document.createElement("img");
+          img.style.display = "inline-block";
+          img.src = filename;
+          receiptDiv.appendChild(img);
+        })
+    
         const audio = new Audio("/receipt.m4a");
         audio.play();
       }
+
+      socket.on("new-xml", (data) => {
+        displayXML(data.data);
+      });
+
+      function displayXML(xmlContent) {
+        insertDataContainer((ctn)=>{
+          ctn.className = (ctn.className || '')+ ' hljs whitespace-pre text-left overflow-auto'
+          const textEl = document.createElement("code");  
+          textEl.className = "";
+          textEl.innerHTML = xmlContent;
+          ctn.appendChild(textEl);
+        })
+    
+      }
+
   
     </script>
   </body>
