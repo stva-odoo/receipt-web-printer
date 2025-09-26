@@ -1,8 +1,12 @@
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
+const xmlFormat = require("xml-formatter");
 var cors = require("cors");
 const path = require("path");
+const hljs = require("highlight.js/lib/core");
+hljs.registerLanguage("xml", require("highlight.js/lib/languages/xml"));
+
 const { convertRasterFile } = require("./lib/epson");
 const { generateIOTModule } = require("./lib/iot");
 
@@ -23,6 +27,12 @@ app.use(
   express.raw({
     type: ["image/*", "text/plain"],
     limit: "2mb",
+  })
+);
+
+app.use(
+  express.text({
+    type: ["application/xml", "text/xml", "application/vnd.wap.wml", "*/*"],
   })
 );
 app.set("view engine", "ejs");
@@ -60,6 +70,12 @@ app.get("/printer/:name", async (req, res) => {
 
 app.post("/:name/cgi-bin/epos/service.cgi", processReceipt);
 app.post("/printer/:name/cgi-bin/epos/service.cgi", processReceipt);
+
+app.get("/hw_proxy/hello", async (req, res) => {
+  res.json({ result: true });
+});
+
+// IoT
 
 async function processIOReceipt(req, res) {
   const printerName = req.headers.host.split(".")[0];
@@ -102,9 +118,37 @@ app.get("/iot/:name", async (req, res) => {
   await generateIOTModule(printerName + "." + serverHostName, printerName, res);
 });
 
-app.get("/hw_proxy/hello", async (req, res) => {
-  res.json({ result: true });
-});
+// Italian fiscal printer
+
+async function processItFiscalCommand(req, res) {
+  const printerName = req.params.name;
+  const xmlBody = req.body || "";
+
+  //TODO handle more response
+  const xmlResponse = `
+  <response>
+    <data >
+      <result success="true" code="200" status="OK">
+        <info>
+          <responseData>xxx</responseData>
+        </info>
+      </result>
+    </data>
+  </response>
+`;
+
+  res.status(200).type("application/xml").send(xmlResponse);
+
+  const formattedXML = xmlFormat(xmlBody);
+  io.to(printerName).emit("new-xml", {
+    data: hljs.highlight(formattedXML, { language: "xml" }).value,
+    originalData: formattedXML,
+    date: Date.now,
+  });
+}
+
+app.post("/:name/cgi-bin/fpmate.cgi", processItFiscalCommand);
+app.post("/printer/:name/cgi-bin/fpmate.cgi", processItFiscalCommand);
 
 // Middleware for authenticating sockets
 io.use((socket, next) => {
