@@ -238,16 +238,26 @@
         audio.play();
       }
 
-      socket.on("new-xml", (data) => {
-        displayXML(data.data);
+      socket.on("new-text", (data) => {
+        displayXML(data.text, false);
       });
 
-      function displayXML(xmlContent) {
+      socket.on("new-xml", (data) => {
+        displayXML(data.data, true);
+      });
+
+      function displayXML(xmlContent, isSafe) {
         insertDataContainer((ctn)=>{
           ctn.className = (ctn.className || '')+ ' hljs whitespace-pre text-left overflow-auto'
           const textEl = document.createElement("code");  
           textEl.className = "";
-          textEl.innerHTML = xmlContent;
+          if(isSafe){
+            textEl.innerHTML = xmlContent
+          }
+          else{
+            textEl.innerText = xmlContent  
+          }
+        
           ctn.appendChild(textEl);
         })
     

@@ -41,16 +41,38 @@ const serverHostName = process.env.SERVER_HOST_NAME || "pos.stva.ovh";
 
 async function processReceipt(req, res) {
   const printerName = req.params.name;
-  const filename = `r-${Date.now()}.jpg`;
-  const destFilePath = path.join(receiptDir, filename);
+
   try {
-    await convertRasterFile(req.body, destFilePath);
-    res.send("<response success='true'></response>");
+    const xml = req.body;
+    if (xml.indexOf("<image") >= 0) {
+      const filename = `r-${Date.now()}.jpg`;
+      const destFilePath = path.join(receiptDir, filename);
+      await convertRasterFile(req.body, destFilePath);
+      io.to(printerName).emit("new-image", {
+        filename: "/receipt/" + filename,
+      });
+    } else if (xml.indexOf("<pulse") >= 0) {
+      io.to(printerName).emit("new-text", {
+        text: "Cash drawer opened.",
+      });
+    } else if (xml.indexOf("<text") >= 0) {
+      const xmlData = Buffer.isBuffer(xml) ? xml.toString("utf8") : xml;
+      const textMatches = [
+        ...xmlData.matchAll(/<text\b[^>]*>([\s\S]*?)<\/text>/gi),
+      ];
+      const combinedText = textMatches
+        .map((m) => m[1].replace(/&#10;/g, "\n").replace(/&#13;/g, "\r").trim())
+        .join("\n");
+      io.to(printerName).emit("new-text", {
+        text: combinedText,
+      });
+    }
+
+    res.send("<response success='true' code=''></response>");
   } catch (err) {
     console.error("Error converting data:", err);
     return res.sendStatus(500);
   }
-  io.to(printerName).emit("new-image", { filename: "/receipt/" + filename });
 }
 
 app.get("/printer/:name", async (req, res) => {
